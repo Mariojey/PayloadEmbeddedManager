@@ -14,6 +14,8 @@
 
 #include "Types.h"
 
+#include "EventListener.h"
+
 static EnvironmentSensor env;
 static PiezoSensor piezo;
 static AccelerationSensor adxl;
@@ -40,6 +42,9 @@ void RTS::init(){
 
   realTimeClock.begin();
 
+  EventListener.begin();
+  EventListener.ready();
+
 }
 
 void RTS::update(){
@@ -57,6 +62,8 @@ void RTS::update(){
   dataToSave.c_isMCPValid = mcp.readTemperature(dataToSave.c_mcpTemp);
 
   heater.update(dataToSave.c_mcpTemp, dataToSave.c_isMCPValid);
+
+  EventListener.update(dataToSave.c_r0, dataToSave.c_r1, dataToSave.c_r2, dataToSave.c_r3);
 
   DateTime now;
   realTimeClock.update(now);
