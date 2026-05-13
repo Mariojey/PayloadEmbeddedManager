@@ -5,6 +5,8 @@
 #include <Wire.h>
 #include <BME280I2C.h>
 
+#include "Config.h"
+
 class EnvironmentSensor {
 
 public:

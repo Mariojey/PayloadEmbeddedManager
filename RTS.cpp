@@ -5,14 +5,24 @@
 #include "Environment.h"
 #include "Piezo.h"
 #include "Acceleration.h"
+#include "RealTime.h"
 
 #include "SDLogger.h"
+
+#include "TemperatureController.h"
+#include "TempSensor.h"
+
+#include "Types.h"
 
 static EnvironmentSensor env;
 static PiezoSensor piezo;
 static AccelerationSensor adxl;
+static RealTime realTimeClock;
 
-SDLogger logger;
+static SDLogger logger;
+
+static TemperatureController heater;
+static TempSensor mcp;
 
 void RTS::init(){
 
@@ -24,18 +34,55 @@ void RTS::init(){
   piezo.begin();
   adxl.begin();
 
+  mcp.begin();
+  heater.begin(PWM_PIN);
+  heater.setTarget(35.0f);
+
+  realTimeClock.begin();
+
 }
 
 void RTS::update(){
+
+  CollectedData dataToSave;
   
   float temperature, humidity, pressure;
   int motionValue;
   int16_t accX, accY, accZ;
 
-  env.readData(temperature, humidity, pressure);
-  motionValue = piezo.readData();
-  adxl.readData(accX, accY, accZ);
+  env.readData(dataToSave.c_temperature, dataToSave.c_humidity, dataToSave.c_pressure);
+  dataToSave.c_motion = piezo.readData();
+  adxl.readData(dataToSave.c_accX, dataToSave.c_accY, dataToSave.c_accZ);
 
-  //add logger at the end
+  dataToSave.c_isMCPValid = mcp.readTemperature(dataToSave.c_mcpTemp);
+
+  heater.update(dataToSave.c_mcpTemp, dataToSave.c_isMCPValid);
+
+  DateTime now;
+  realTimeClock.update(now);
+  char timestamp[32];
+  sprintf(timestamp, "%d:%d:%d ", now.hour(), now.minute(), now.second());
+  logger.append(timestamp);
+
+  char buffer[256];
+  sprintf(buffer, 
+  
+    "0 %.2f %.2f %.2f %f %f %f %d %f %B %B %B %B %B %B ACK\n",
+    (dataToSave.c_accX * 0.0031), 
+    (dataToSave.c_accY * 0.0031),
+    (dataToSave.c_accZ * 0.0031),
+    dataToSave.c_temperature,
+    dataToSave.c_humidity,
+    dataToSave.c_pressure,
+    dataToSave.c_motion,
+    dataToSave.c_mcpTemp,
+    dataToSave.c_isMCPValid,
+    dataToSave.c_payloadStatus,
+    dataToSave.c_r0,
+    dataToSave.c_r1,
+    dataToSave.c_r2,
+    dataToSave.c_r3
+  );
+  logger.append(buffer);
 
 }

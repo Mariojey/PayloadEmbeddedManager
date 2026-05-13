@@ -4,12 +4,14 @@
 #include <Arduino.h>
 #include <Wire.h>
 
+#include "Config.h"
+
 class AccelerationSensor {
 
 public:
   
   bool begin();
-  bool readData(int16_t& accX, int16_t& accY, int16_t& accY);
+  bool readData(int16_t& accX, int16_t& accY, int16_t& accZ);
 
 
 };

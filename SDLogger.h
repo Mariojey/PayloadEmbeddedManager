@@ -5,6 +5,8 @@
 #include <SPI.h>
 #include <SD.h>
 
+#include "Config.h"
+
 class SDLogger {
 
 public:
